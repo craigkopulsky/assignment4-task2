@@ -1,0 +1,72 @@
+---
+title: "assignment4_task2"
+author: "Craig Kopulsky"
+date: "11/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(lubridate)
+
+```
+
+
+```{r}
+hares_data <- read.csv(here("data", "bonanza_hares.csv")) %>% 
+  mutate(date = mdy(date)) %>% 
+  mutate(year = year(date))
+```
+
+
+
+# 1. Introduction
+
+
+# 2. Data an analysis
+
+
+# 3. Exploratory findings
+
+
+### Annual juvenile hare trap counts
+```{r}
+annual_juv <- hares_data %>% 
+  filter(age == "j")
+
+ggplot(data = annual_juv, aes(year)) +
+  geom_histogram() + 
+  labs(x = "Year",
+       y = "Total Juvenile Hares Trapped") +
+  scale_x_continuous(breaks=seq(1999, 2012, 1))
+
+annual_juv_counts <- annual_juv %>% 
+  group_by(year) %>% 
+  summarize(count = n())
+
+annual_juv_counts
+  
+```
+
+Analisys - 3-4 sentences
+
+
+
+### Visualize juvenile hare weights
+```{r}
+ggplot(data = annual_juv, aes(weight)) +
+  geom_histogram() +
+  facet_wrap(~sex)
+
+ggplot(data = annual_juv, aes(weight)) +
+  geom_histogram() +
+  facet_wrap(~grid)
+```
+
+
+
+### Juvenile weight comparison (male and female snowshoe hares)
+
+
