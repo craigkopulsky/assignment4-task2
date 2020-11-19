@@ -23,7 +23,8 @@ hares_data <- read.csv(here("data", "bonanza_hares.csv")) %>%
   mutate(year = year(date)) %>% 
   mutate(sex_full = case_when(
     sex == "m" ~ "Male",
-    sex == "f" ~ "Female")) %>%
+    sex == "f" ~ "Female",
+    is.na(sex) ~ "NA")) %>%
   mutate(site = case_when(
     grid == "bonrip" ~ "Riperian",
     grid == "bonbs" ~ "Lowland",
@@ -113,16 +114,60 @@ ggplot(data = annual_juv, aes(x=site, y=weight)) +
 ```
 
 ```{r}
-### figure this out
+
+annual_juv_sitesex_cats <- annual_juv %>% 
+  mutate(sitesex_cat = case_when(
+    sex_full == "Female" & site == "Lowland" ~ "f - Lowland",
+    sex_full == "Female" & site == "Mature" ~ "f - Mature",
+    sex_full == "Female" & site == "Riperian" ~ "f - Riperian",
+    sex_full == "Male" & site == "Lowland" ~ "m - Lowland",
+    sex_full == "Male" & site == "Mature" ~ "m - Mature",
+    sex_full == "Male" & site == "Riperian" ~ "m - Riperian",
+    sex_full == "NA" & site == "Lowland" ~ "NA - Lowland",
+    sex_full == "NA" & site == "Mature" ~ "NA - Mature",
+    sex_full == "NA" & site == "Riperian" ~ "NA - Riperian"
+  ))
+
+sitesex_cat_stats <- annual_juv_sitesex_cats %>% 
+  group_by(sitesex_cat) %>% 
+  summarize(mean = mean(weight, na.rm = TRUE), sd = sd(weight, na.rm = TRUE))
+sitesex_cat_stats
+
+annual_juv_sitesex_cat_stats <- annual_juv_sitesex_cats %>% 
+  mutate(sitesex_mean = case_when(
+    sitesex_cat == "f - Lowland" ~ 1022.0588,
+    sitesex_cat == "f - Mature" ~ 808.1944,
+    sitesex_cat == "f - Riperian" ~ 824.1496,
+    sitesex_cat == "m - Lowland" ~ 1073.0769,
+    sitesex_cat == "m - Mature" ~ 950.1250,
+    sitesex_cat == "m - Riperian" ~ 929.2727,
+    sitesex_cat == "NA - Lowland" ~ NA_real_,
+    sitesex_cat == "NA - Mature" ~ 816.6667,
+    sitesex_cat == "NA - Riperian" ~ 372.0000,
+  )) %>% 
+  mutate(sitesex_sd = case_when(
+    sitesex_cat == "f - Lowland" ~ 292.9632,
+    sitesex_cat == "f - Mature" ~ 361.1235,
+    sitesex_cat == "f - Riperian" ~ 255.0350,
+    sitesex_cat == "m - Lowland" ~ 222.6408,
+    sitesex_cat == "m - Mature" ~ 314.6864,
+    sitesex_cat == "m - Riperian" ~ 349.1660,
+    sitesex_cat == "NA - Lowland" ~ NA_real_,
+    sitesex_cat == "NA - Mature" ~ 307.0939,
+    sitesex_cat == "NA - Riperian" ~ 258.7856,
+  ))
 
 
-
-ggplot(data = annual_juv) +
-  geom_beeswarm(aes(x=site, y=weight, color = site)) +
+ggplot(data = annual_juv_sitesex_cat_stats) +
+  geom_beeswarm(aes(x = site, y = weight, color = site)) +
   facet_wrap(~sex_full) +
-  geom_point(aes(x = site, y = mean(weight)),
-             size = 10) +
+  geom_point(aes(x = site, y = sitesex_mean),
+             size = 1) +
   facet_wrap(~sex_full) +
+  geom_errorbar(aes(x = site,
+                    ymax = sitesex_mean + sitesex_sd,
+                    ymin = sitesex_mean - sitesex_sd),
+                width = 0.1) +
   labs(x = "Bonanza Creek Site", y = "Weight (g)")
   
 
@@ -133,12 +178,10 @@ ggplot(data = annual_juv) +
 
 
 
-```{r}
-ggplot(data = annual_juv, aes(x=grid, y=weight)) +
-  beeswarm::beeswarm()+
-  facet_wrap(~sex)
 
-```
+
+
+
 
 
 2-3 sentences analysis
