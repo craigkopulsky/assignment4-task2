@@ -10,6 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(here)
 library(lubridate)
+library(kableExtra)
+library(effsize)
+library(ggbeeswarm)
 
 ```
 
@@ -17,7 +20,17 @@ library(lubridate)
 ```{r}
 hares_data <- read.csv(here("data", "bonanza_hares.csv")) %>% 
   mutate(date = mdy(date)) %>% 
-  mutate(year = year(date))
+  mutate(year = year(date)) %>% 
+  mutate(sex_full = case_when(
+    sex == "m" ~ "Male",
+    sex == "f" ~ "Female")) %>%
+  mutate(site = case_when(
+    grid == "bonrip" ~ "Riperian",
+    grid == "bonbs" ~ "Lowland",
+    grid == "bonmat" ~ "Mature"
+  ))
+      
+    
 ```
 
 
@@ -47,10 +60,21 @@ annual_juv_counts <- annual_juv %>%
   summarize(count = n())
 
 annual_juv_counts
+
+ggplot(data = annual_juv_counts, aes(x = year, y = count)) +
+  geom_line() +
+  labs(x = "Year",
+       y = "Total Juvenile Hares Trapped") + 
+  scale_x_continuous(breaks=seq(1999, 2012, 1))
+
+juv_counts_summary <- annual_juv_counts %>% 
+  summarize(mean = mean(count), median = median(count))
+
+juv_counts_summary
   
 ```
 
-Analisys - 3-4 sentences
+The average number of juvenile hares trapped yearly in Bonanza Creek is 31.5 hares and the median number trapped yearly is 18.5 hares. There were 126 total juvenile hare trappings in Bonanza Creek in 1999, the highest number for the duration of the study. After this initial peak, annual juvenile hare trappings in Bonanza Creek sharply declined, never reaching the mean after 2000, except for relatively large annual juvenile hare trappings of 48 and 44 hares in 2005 and 2008 respectively. Annual juvenile hare trappings were as low as 2 hares in 2010.
 
 
 
@@ -60,13 +84,104 @@ ggplot(data = annual_juv, aes(weight)) +
   geom_histogram() +
   facet_wrap(~sex)
 
+weight_sex_summary <- annual_juv %>% 
+  group_by(sex) %>% 
+  summarize(mean = mean(weight, na.rm = TRUE), median = median(weight, na.rm = TRUE), sd = sd(weight, na.rm = TRUE), n = n())
+kbl(weight_sex_summary) %>% 
+  kable_styling(full_width = FALSE, "hover")
+
 ggplot(data = annual_juv, aes(weight)) +
   geom_histogram() +
   facet_wrap(~grid)
+
+site_sex_summary <- annual_juv %>% 
+  group_by(grid) %>% 
+  summarize(mean = mean(weight, na.rm = TRUE), median = median(weight, na.rm = TRUE), sd = sd(weight, na.rm = TRUE), n = n())
+kbl(site_sex_summary) %>% 
+  kable_styling(full_width = FALSE, "hover")
+```
+
+```{r}
+ggplot(data = annual_juv, aes(x=site, y=weight)) +
+  geom_beeswarm(aes(color = site)) +
+  facet_wrap(~sex_full) +
+  geom_boxplot(alpha = 0.1) +
+  facet_wrap(~sex_full) +
+  labs(x = "Bonanza Creek Site", y = "Weight (g)")
+  
+
+```
+
+```{r}
+### figure this out
+
+
+
+ggplot(data = annual_juv) +
+  geom_beeswarm(aes(x=site, y=weight, color = site)) +
+  facet_wrap(~sex_full) +
+  geom_point(aes(x = site, y = mean(weight)),
+             size = 10) +
+  facet_wrap(~sex_full) +
+  labs(x = "Bonanza Creek Site", y = "Weight (g)")
+  
+
 ```
 
 
 
+
+
+
+```{r}
+ggplot(data = annual_juv, aes(x=grid, y=weight)) +
+  beeswarm::beeswarm()+
+  facet_wrap(~sex)
+
+```
+
+
+2-3 sentences analysis
+
+
 ### Juvenile weight comparison (male and female snowshoe hares)
+
+
+```{r}
+mf_annual_juv <- annual_juv %>%
+  filter(sex == "m" | sex == "f")
+
+final_weight_sex_summary <- mf_annual_juv %>% 
+  group_by(sex) %>% 
+  summarize(mean = mean(weight, na.rm = TRUE), median = median(weight, na.rm = TRUE), sd = sd(weight, na.rm = TRUE), n = n())
+final_weight_sex_summary
+kbl(final_weight_sex_summary) %>% 
+  kable_styling(full_width = FALSE, "hover")
+
+male_weight <- mf_annual_juv %>% 
+  filter(sex == "m") %>% 
+  pull(weight)
+
+female_weight <- mf_annual_juv %>% 
+  filter(sex == "f") %>% 
+  pull(weight)
+
+t.test(x = male_weight, female_weight)
+
+cohen.d(male_weight, female_weight)
+  
+```
+
+
+### Relationship between juvenile weight and hind foot length
+
+```{r}
+hindft_weight_comp <- hares_data %>% 
+  filter(hindft != "NA" & weight != "NA")
+
+ggplot(data = hindft_weight_comp, aes(x = "hindft", y = "weight")) +
+  geom_point()
+```
+
 
 
